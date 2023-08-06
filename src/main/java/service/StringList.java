@@ -1,79 +1,182 @@
 package service;
 
-public interface StringList {
-    // Добавление элемента.
-    // Вернуть добавленный элемент
-    // в качестве результата выполнения.
-    String add(String item);
+import exception.NotFoundElementException;
+import exception.NullValueFindException;
+import exception.OutsideSelectException;
+import odject.Repository;
 
-    // Добавление элемента
-    // на определенную позицию списка.
-    // Если выходит за пределы фактического
-    // количества элементов или массива,
-    // выбросить исключение.
-    // Вернуть добавленный элемент
-    // в качестве результата выполнения.
-    String add(int index, String item);
+import java.util.Arrays;
 
-    // Установить элемент
-    // на определенную позицию,
-    // затерев существующий.
-    // Выбросить исключение,
-    // если индекс больше
-    // фактического количества элементов
-    // или выходит за пределы массива.
-    String set(int index, String item);
+public class StringList implements ServiceStringList {
+    Repository repository = new Repository();
 
-    // Удаление элемента.
-    // Вернуть удаленный элемент
-    // или исключение, если подобный
-    // элемент отсутствует в списке.
-    String remove(String item);
+    @Override
+    public String add(String item) {
+        String[] rep = new String[repository.length() + 1];
+        System.arraycopy(repository.getRepository(), 0, rep, 0, repository.length());
+        rep[rep.length - 1] = item;
+        repository.setRepository(rep);
+        return repository.getRepository()[rep.length - 1];
+    }
 
-    // Удаление элемента по индексу.
-    // Вернуть удаленный элемент
-    // или исключение, если подобный
-    // элемент отсутствует в списке.
-    String remove(int index);
+    @Override
+    public String add(int index, String item) {
+        String[] rep = new String[repository.length() + 1];
+        if (index > rep.length - 1) {
+            throw new OutsideSelectException("Вы выбрали индекс, который находится за пределами массива");
+        } else if (index == 0) {
+            System.arraycopy(repository.getRepository(), 0, rep, 1, repository.length());
+            rep[index] = item;
+            repository.setRepository(rep);
+        } else {
+            System.arraycopy(repository.getRepository(), 0, rep, 0, index);
+            rep[index] = item;
+            System.arraycopy(repository.getRepository(), index, rep, index + 1, repository.length() - index);
+            repository.setRepository(rep);
+        }
+        return repository.getRepository()[index];
+    }
 
-    // Проверка на существование элемента.
-    // Вернуть true/false;
-    boolean contains(String item);
+    @Override
+    public String set(int index, String item) {
+        String[] rep = new String[repository.length()];
+        if (index > rep.length - 1) {
+            throw new OutsideSelectException("Вы выбрали индекс, который находится за пределами массива");
+        } else if (index == 0) {
+            System.arraycopy(repository.getRepository(), 1, rep, 1, repository.length() - (index + 1));
+            rep[index] = item;
+            repository.setRepository(rep);
+        } else {
+            System.arraycopy(repository.getRepository(), 0, rep, 0, index);
+            rep[index] = item;
+            System.arraycopy(repository.getRepository(), index + 1, rep, index + 1, repository.length() - (index + 1));
+            repository.setRepository(rep);
+        }
+        return repository.getRepository()[index];
+    }
 
-    // Поиск элемента.
-    // Вернуть индекс элемента
-    // или -1 в случае отсутствия.
-    int indexOf(String item);
+    @Override
+    public String remove(String item) {
+        int index = Integer.MIN_VALUE;
+        String[] rep = new String[repository.length() - 1];
+        for (int i = 0; i < repository.length(); i++) {
+            if (item.equals(repository.getRepository()[i])) {
+                index = i;
+            }
+        }
+        if (index < 0) {
+            throw new NotFoundElementException("Элемент не найден");
+        }
+        else if (index == 0) {
+            System.arraycopy(repository.getRepository(), 1, rep, 0, repository.length() - 1);
+            repository.setRepository(rep);
+        } else {
+            System.arraycopy(repository.getRepository(), 0, rep, 0, index);
+            System.arraycopy(repository.getRepository(), index + 1, rep, index, repository.length() - (index + 1));
+            repository.setRepository(rep);
+        }
+        return "Элемент " + item + " удален";
+    }
 
-    // Поиск элемента с конца.
-    // Вернуть индекс элемента
-    // или -1 в случае отсутствия.
-    int lastIndexOf(String item);
+    @Override
+    public String remove(int index) {
+        if (index > repository.getRepository().length - 1) {
+            throw new OutsideSelectException("Вы выбрали индекс, который находится за пределами массива");
+        }
+        String[] rep = new String[repository.length() - 1];
+        String remove = repository.getRepository()[index];
+         if (index == 0) {
+            System.arraycopy(repository.getRepository(), 1, rep, 0, repository.length() - 1);
+            repository.setRepository(rep);
+        } else {
+            System.arraycopy(repository.getRepository(), 0, rep, 0, index);
+            System.arraycopy(repository.getRepository(), index + 1, rep, index, repository.length() - (index + 1));
 
-    // Получить элемент по индексу.
-    // Вернуть элемент или исключение,
-    // если выходит за рамки фактического
-    // количества элементов.
-    String get(int index);
+            repository.setRepository(rep);
+        }
+        return "Элемент " + remove + " удален";
+    }
 
-    // Сравнить текущий список с другим.
-    // Вернуть true/false или исключение,
-    // если передан null.
-    boolean equals(StringList otherList);
+    @Override
+    public boolean contains(String item) {
+        for (int i = 0; i < repository.length(); i++) {
+            if (repository.getRepository()[i] == null) {
+                throw new NullValueFindException("В списке недопустимое значение=null");
+            }
+            else if(repository.getRepository()[i].equals(item)){
+                return true;
+            }
+        }
+        return false;
+    }
 
-    // Вернуть фактическое количество элементов.
-    int size();
+    @Override
+    public int indexOf(String item) {
+        for (int i = 0; i < repository.length(); i++) {
+            if(repository.getRepository()[i].equals(item)){
+                int index;
+                return index = i;
+            }
+        }
+        return - 1;
+    }
 
-    // Вернуть true,
-    // если элементов в списке нет,
-    // иначе false.
-    boolean isEmpty();
+    @Override
+    public int lastIndexOf(String item) {
+        for (int i = repository.length() - 1; i >= 0; i--) {
+            if(repository.getRepository()[i].equals(item)){
+                int index;
+                return index = i;
+            }
+        }
+        return - 1;
+    }
 
-    // Удалить все элементы из списка.
-    void clear();
+    @Override
+    public String get(int index) {
+        if (index > repository.getRepository().length - 1) {
+            throw new OutsideSelectException("Вы выбрали индекс, который находится за пределами массива");
+        }
+        return repository.getRepository()[index];
+    }
 
-    // Создать новый массив
-    // из строк в списке
-    // и вернуть его.
-    String[] toArray();
+    @Override
+    public boolean equals(StringList otherList) {
+        otherList.contains(null);
+        String[] rep = new String[otherList.size()];
+        for (int i = 0; i < otherList.size(); i++) {
+            rep[i] = otherList.get(i);
+        }
+        if (Arrays.equals(repository.getRepository(), rep)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int size() {
+        return repository.length();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        if (repository.length() == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void clear() {
+        String[] rep = new String[0];
+        repository.setRepository(rep);
+    }
+
+    @Override
+    public String[] toArray() {
+        String[] rep = new String[repository.length()];
+        System.arraycopy(repository.getRepository(), 0, rep, 0, repository.length());
+        return rep;
+    }
 }
